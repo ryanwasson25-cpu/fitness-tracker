@@ -1,0 +1,159 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.greeting {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* This Week card */
+.summaryCard {
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.summaryTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+  margin-bottom: 16px;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summaryValue {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.summaryLabel {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* Section */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.sectionLink {
+  font-size: 13px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* Recent activity */
+.activityCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: 0;
+  text-align: left;
+  color: var(--text);
+}
+
+.activityItem:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.activityItem:hover {
+  background: var(--surface-2);
+  opacity: 1;
+}
+
+.activityName {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.activityDate {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.noActivity {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 20px;
+}
+
+/* Quick actions */
+.quickActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.actionBtn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.actionBtn:hover {
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+.actionIcon {
+  font-size: 28px;
+  line-height: 1;
+}

@@ -11,11 +11,7 @@ interface Props {
 interface FormState {
   date: string
   weight_lbs: string
-  chest_in: string
-  waist_in: string
-  hips_in: string
-  arms_in: string
-  legs_in: string
+  body_fat_pct: string
   notes: string
 }
 
@@ -32,11 +28,7 @@ export default function MetricsLogger({ userId, onSaved, onCancel }: Props) {
   const [form, setForm] = useState<FormState>({
     date: today(),
     weight_lbs: '',
-    chest_in: '',
-    waist_in: '',
-    hips_in: '',
-    arms_in: '',
-    legs_in: '',
+    body_fat_pct: '',
     notes: '',
   })
   const [saving, setSaving] = useState(false)
@@ -47,11 +39,8 @@ export default function MetricsLogger({ userId, onSaved, onCancel }: Props) {
   }
 
   async function handleSave() {
-    const hasAnyValue =
-      form.weight_lbs || form.chest_in || form.waist_in ||
-      form.hips_in || form.arms_in || form.legs_in
-    if (!hasAnyValue) {
-      setError('Enter at least one measurement to save.')
+    if (!form.weight_lbs && !form.body_fat_pct) {
+      setError('Enter at least one value to save.')
       return
     }
 
@@ -62,11 +51,7 @@ export default function MetricsLogger({ userId, onSaved, onCancel }: Props) {
       user_id: userId,
       date: form.date,
       weight_lbs: parseNum(form.weight_lbs),
-      chest_in: parseNum(form.chest_in),
-      waist_in: parseNum(form.waist_in),
-      hips_in: parseNum(form.hips_in),
-      arms_in: parseNum(form.arms_in),
-      legs_in: parseNum(form.legs_in),
+      body_fat_pct: parseNum(form.body_fat_pct),
       notes: form.notes.trim() || null,
     })
 
@@ -81,7 +66,7 @@ export default function MetricsLogger({ userId, onSaved, onCancel }: Props) {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2 className={styles.heading}>Log Body Metrics</h2>
+        <h2 className={styles.heading}>Log Body Stats</h2>
         <button className={styles.cancelBtn} onClick={onCancel}>Cancel</button>
       </div>
 
@@ -106,30 +91,18 @@ export default function MetricsLogger({ userId, onSaved, onCancel }: Props) {
             onChange={e => set('weight_lbs', e.target.value)}
           />
         </div>
-      </div>
 
-      <div className={styles.section}>
-        <p className={styles.sectionTitle}>Measurements (inches)</p>
-        <div className={styles.grid}>
-          {([
-            ['chest_in', 'Chest'],
-            ['waist_in', 'Waist'],
-            ['hips_in', 'Hips'],
-            ['arms_in', 'Arms'],
-            ['legs_in', 'Legs'],
-          ] as [keyof FormState, string][]).map(([key, label]) => (
-            <div key={key} className={styles.field}>
-              <label>{label}</label>
-              <input
-                type="number"
-                min="0"
-                step="0.25"
-                placeholder="0.00"
-                value={form[key]}
-                onChange={e => set(key, e.target.value)}
-              />
-            </div>
-          ))}
+        <div className={styles.field}>
+          <label>Body Fat %</label>
+          <input
+            type="number"
+            min="0"
+            max="60"
+            step="0.1"
+            placeholder="e.g. 18.5"
+            value={form.body_fat_pct}
+            onChange={e => set('body_fat_pct', e.target.value)}
+          />
         </div>
       </div>
 
@@ -152,7 +125,7 @@ export default function MetricsLogger({ userId, onSaved, onCancel }: Props) {
         onClick={handleSave}
         disabled={saving}
       >
-        {saving ? 'Saving…' : 'Save Metrics'}
+        {saving ? 'Saving…' : 'Save Stats'}
       </button>
     </div>
   )

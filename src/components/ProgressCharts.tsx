@@ -8,7 +8,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts'
 import { supabase } from '../lib/supabase'
@@ -31,13 +30,7 @@ interface ExercisePoint {
 }
 
 const ACCENT = '#2b9f8f'
-const MEASURE_COLORS: Record<string, string> = {
-  chest_in: '#2b9f8f',
-  waist_in: '#e07b39',
-  hips_in: '#8b5cf6',
-  arms_in: '#2563eb',
-  legs_in: '#d97706',
-}
+const BF_COLOR = '#e07b39'
 
 function formatDate(dateStr: unknown) {
   if (typeof dateStr !== 'string') return String(dateStr ?? '')
@@ -142,16 +135,9 @@ export default function ProgressCharts({ userId }: Props) {
     .filter(m => m.weight_lbs != null)
     .map(m => ({ date: m.date, weight: m.weight_lbs }))
 
-  const measureData = bodyMetrics
-    .filter(m => m.chest_in != null || m.waist_in != null || m.hips_in != null || m.arms_in != null || m.legs_in != null)
-    .map(m => ({
-      date: m.date,
-      chest_in: m.chest_in,
-      waist_in: m.waist_in,
-      hips_in: m.hips_in,
-      arms_in: m.arms_in,
-      legs_in: m.legs_in,
-    }))
+  const bodyFatData = bodyMetrics
+    .filter(m => m.body_fat_pct != null)
+    .map(m => ({ date: m.date, bodyFat: m.body_fat_pct }))
 
   if (loading) {
     return (
@@ -209,15 +195,15 @@ export default function ProgressCharts({ userId }: Props) {
         )}
       </div>
 
-      {/* Measurements */}
+      {/* Body Fat % */}
       <div className={styles.card}>
-        <div className={styles.cardTitle}>Body Measurements (inches)</div>
-        {measureData.length === 0 ? (
+        <div className={styles.cardTitle}>Body Fat %</div>
+        {bodyFatData.length === 0 ? (
           <div className={styles.empty}>No data yet</div>
         ) : (
           <div className={styles.chartWrap}>
-            <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={measureData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={bodyFatData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis
                   dataKey="date"
@@ -235,25 +221,17 @@ export default function ProgressCharts({ userId }: Props) {
                 <Tooltip
                   labelFormatter={formatDate}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  formatter={(v: any, name: any) => [`${v}"`, String(name).replace('_in', '')]}
+                  formatter={(v: any) => [`${v}%`, 'Body Fat']}
                   contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)' }}
                 />
-                <Legend
-                  formatter={(v: string) => v.replace('_in', '')}
-                  wrapperStyle={{ fontSize: 12 }}
+                <Line
+                  type="monotone"
+                  dataKey="bodyFat"
+                  stroke={BF_COLOR}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: BF_COLOR }}
+                  activeDot={{ r: 5 }}
                 />
-                {(Object.keys(MEASURE_COLORS) as (keyof typeof MEASURE_COLORS)[]).map(key => (
-                  <Line
-                    key={key}
-                    type="monotone"
-                    dataKey={key}
-                    stroke={MEASURE_COLORS[key]}
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: MEASURE_COLORS[key] }}
-                    activeDot={{ r: 5 }}
-                    connectNulls
-                  />
-                ))}
               </LineChart>
             </ResponsiveContainer>
           </div>

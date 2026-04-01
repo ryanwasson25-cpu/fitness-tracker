@@ -30,88 +30,37 @@
   box-shadow: var(--shadow);
 }
 
-.cardHeader {
+.cardContent {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
-  background: none;
   padding: 14px 16px;
-  text-align: left;
-  border-radius: 0;
-  color: var(--text);
-}
-
-.cardHeader:hover {
-  background: var(--surface-2);
-  opacity: 1;
+  gap: 12px;
 }
 
 .cardInfo {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  min-width: 0;
 }
 
 .cardDate {
   font-weight: 600;
   font-size: 15px;
+  color: var(--text);
 }
 
-.cardWeight {
+.cardStats {
   font-size: 13px;
   color: var(--accent);
-}
-
-.cardMeasurementCount {
-  color: var(--text-muted);
-}
-
-.chevron {
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.cardBody {
-  border-top: 1px solid var(--border);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.measurementsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 10px;
-}
-
-.measurement {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.measureLabel {
-  font-size: 11px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.measureValue {
-  font-size: 16px;
-  font-weight: 600;
 }
 
 .notes {
   font-size: 13px;
   color: var(--text-muted);
   font-style: italic;
+  margin-top: 2px;
 }
 
 .deleteBtn {
@@ -119,9 +68,10 @@
   color: var(--danger);
   border: 1px solid var(--danger);
   font-size: 12px;
-  padding: 6px 12px;
-  align-self: flex-start;
+  padding: 5px 10px;
   border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .emptyState {

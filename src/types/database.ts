@@ -110,11 +110,7 @@ export interface BodyMetric {
   user_id: string
   date: string
   weight_lbs: number | null
-  chest_in: number | null
-  waist_in: number | null
-  hips_in: number | null
-  arms_in: number | null
-  legs_in: number | null
+  body_fat_pct: number | null
   notes: string | null
   created_at: string
 }
@@ -123,10 +119,6 @@ export interface BodyMetricInsert {
   user_id: string
   date: string
   weight_lbs?: number | null
-  chest_in?: number | null
-  waist_in?: number | null
-  hips_in?: number | null
-  arms_in?: number | null
-  legs_in?: number | null
+  body_fat_pct?: number | null
   notes?: string | null
 }
