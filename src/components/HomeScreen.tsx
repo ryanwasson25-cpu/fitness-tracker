@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { View } from './Dashboard'
+import { DumbbellIcon, ActivityIcon } from './Icons'
 import styles from './HomeScreen.module.css'
 
 interface Props {
   userId: string
+  email: string
   onNavigate: (view: View) => void
 }
 
@@ -20,6 +22,46 @@ interface RecentWorkout {
   date: string
 }
 
+const QUOTES: { text: string; author?: string }[] = [
+  { text: "The only bad workout is the one that didn't happen." },
+  { text: "Take care of your body. It's the only place you have to live.", author: "Jim Rohn" },
+  { text: "No matter how slow you go, you're still lapping everyone on the couch." },
+  { text: "The pain you feel today will be the strength you feel tomorrow." },
+  { text: "It never gets easier. You just get better.", author: "Joan Benoit" },
+  { text: "If you want something you've never had, you must do something you've never done." },
+  { text: "Motivation gets you started. Habit keeps you going.", author: "Jim Ryun" },
+  { text: "The body achieves what the mind believes." },
+  { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+  { text: "Strength doesn't come from what you can do. It comes from overcoming what you thought you couldn't." },
+  { text: "The difference between try and triumph is a little umph." },
+  { text: "Push yourself, because no one else is going to do it for you." },
+  { text: "Don't wish for it. Work for it." },
+  { text: "A one-hour workout is 4% of your day. No excuses." },
+  { text: "Sweat is just fat crying." },
+  { text: "Your future self is watching you right now through your memories." },
+  { text: "Train insane or remain the same." },
+  { text: "Believe in yourself and all that you are.", author: "Christian D. Larson" },
+  { text: "Success is the sum of small efforts repeated day in and day out.", author: "Robert Collier" },
+  { text: "Fall in love with taking care of yourself — mind, body, spirit." },
+  { text: "The last three or four reps is what makes the muscle grow.", author: "Arnold Schwarzenegger" },
+  { text: "Champions aren't made in gyms. Champions are made from something they have deep inside them.", author: "Muhammad Ali" },
+]
+
+function getDayOfYear(): number {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), 0, 0)
+  return Math.floor((now.getTime() - start.getTime()) / 86400000)
+}
+
+function extractFirstName(email: string): string {
+  if (!email) return ''
+  const local = email.split('@')[0]
+  const parts = local.split(/[\d.]+/).filter(Boolean)
+  if (!parts[0]) return ''
+  const word = parts[0]
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+}
+
 function formatDate(d: string) {
   return new Date(d + 'T00:00:00').toLocaleDateString(undefined, {
     month: 'short',
@@ -29,7 +71,7 @@ function formatDate(d: string) {
 
 function getWeekBounds() {
   const now = new Date()
-  const day = now.getDay() // 0 = Sun
+  const day = now.getDay()
   const monday = new Date(now)
   monday.setDate(now.getDate() - ((day + 6) % 7))
   monday.setHours(0, 0, 0, 0)
@@ -42,7 +84,7 @@ function getWeekBounds() {
   }
 }
 
-export default function HomeScreen({ userId, onNavigate }: Props) {
+export default function HomeScreen({ userId, email, onNavigate }: Props) {
   const [summary, setSummary] = useState<WeekSummary>({
     workoutCount: 0,
     latestWeight: null,
@@ -50,6 +92,11 @@ export default function HomeScreen({ userId, onNavigate }: Props) {
   })
   const [recentWorkouts, setRecentWorkouts] = useState<RecentWorkout[]>([])
   const [loading, setLoading] = useState(true)
+
+  const firstName = extractFirstName(email)
+  const greeting = firstName ? `Welcome back, ${firstName}!` : 'Welcome back!'
+
+  const quote = QUOTES[getDayOfYear() % QUOTES.length]
 
   useEffect(() => {
     async function load() {
@@ -97,7 +144,13 @@ export default function HomeScreen({ userId, onNavigate }: Props) {
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.greeting}>Welcome back!</h2>
+      <div>
+        <h2 className={styles.greeting}>{greeting}</h2>
+        <p className={styles.quoteText}>
+          <em>{quote.text}</em>
+          {quote.author && <span className={styles.quoteAuthor}>— {quote.author}</span>}
+        </p>
+      </div>
 
       {/* This Week summary */}
       <div className={styles.summaryCard}>
@@ -152,12 +205,12 @@ export default function HomeScreen({ userId, onNavigate }: Props) {
       <div className={styles.section}>
         <span className={styles.sectionTitle}>Quick Actions</span>
         <div className={styles.quickActions}>
-          <button className={styles.actionBtn} onClick={() => onNavigate('log-workout')}>
-            <span className={styles.actionIcon}>🏋️</span>
+          <button className={styles.actionBtn} onClick={() => onNavigate('log-workout-mode')}>
+            <span className={styles.actionIcon}><DumbbellIcon size={28} /></span>
             Log Workout
           </button>
           <button className={styles.actionBtn} onClick={() => onNavigate('log-stats')}>
-            <span className={styles.actionIcon}>📊</span>
+            <span className={styles.actionIcon}><ActivityIcon size={28} /></span>
             Log Body Stats
           </button>
         </div>

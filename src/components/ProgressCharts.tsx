@@ -29,7 +29,7 @@ interface ExercisePoint {
   maxWeight: number
 }
 
-const ACCENT = '#2b9f8f'
+const ACCENT = '#00d4aa'
 const BF_COLOR = '#e07b39'
 
 function formatDate(dateStr: unknown) {
@@ -179,7 +179,7 @@ export default function ProgressCharts({ userId }: Props) {
                   labelFormatter={formatDate}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(v: any) => [`${v} lbs`, 'Weight']}
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)' }}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
                 />
                 <Line
                   type="monotone"
@@ -222,7 +222,7 @@ export default function ProgressCharts({ userId }: Props) {
                   labelFormatter={formatDate}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(v: any) => [`${v}%`, 'Body Fat']}
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)' }}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
                 />
                 <Line
                   type="monotone"
@@ -267,7 +267,7 @@ export default function ProgressCharts({ userId }: Props) {
                     `${Number(v).toLocaleString()} lbs`,
                     props?.payload?.name ?? '',
                   ]}
-                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)' }}
+                  contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
                 />
                 <Bar dataKey="volume" fill={ACCENT} radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -319,7 +319,7 @@ export default function ProgressCharts({ userId }: Props) {
                       labelFormatter={formatDate}
                       // eslint-disable-next-line @typescript-eslint/no-explicit-any
                       formatter={(v: any) => [`${v} lbs`, 'Max Weight']}
-                      contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)' }}
+                      contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
                     />
                     <Line
                       type="monotone"

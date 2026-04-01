@@ -8,15 +8,32 @@
   font-size: 24px;
   font-weight: 700;
   color: var(--text);
+  margin-bottom: 8px;
+}
+
+.quoteText {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+.quoteAuthor {
+  display: block;
+  font-size: 11px;
+  font-style: normal;
+  color: var(--text-muted);
+  opacity: 0.7;
+  margin-top: 3px;
 }
 
 /* This Week card */
 .summaryCard {
-  background: var(--accent);
-  color: #fff;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow), var(--shadow);
+  color: var(--text);
   border-radius: var(--radius);
   padding: 20px;
-  box-shadow: var(--shadow);
 }
 
 .summaryTitle {
@@ -24,7 +41,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  opacity: 0.8;
+  color: var(--accent);
   margin-bottom: 16px;
 }
 
@@ -44,11 +61,12 @@
   font-size: 22px;
   font-weight: 700;
   line-height: 1;
+  color: var(--text);
 }
 
 .summaryLabel {
   font-size: 11px;
-  opacity: 0.75;
+  color: var(--text-muted);
 }
 
 /* Section */
@@ -98,6 +116,7 @@
   border-radius: 0;
   text-align: left;
   color: var(--text);
+  transition: background-color 0.15s;
 }
 
 .activityItem:not(:last-child) {
@@ -146,14 +165,18 @@
   color: var(--text);
   font-weight: 600;
   font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .actionBtn:hover {
   border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 16px var(--accent-glow);
   opacity: 1;
 }
 
 .actionIcon {
-  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
 }

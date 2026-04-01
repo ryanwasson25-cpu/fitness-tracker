@@ -61,6 +61,17 @@
   font-weight: 600;
   padding: 10px;
   margin-top: 4px;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.submit:hover {
+  box-shadow: 0 0 28px rgba(0, 212, 170, 0.3);
+  opacity: 1;
+}
+
+.submit:active {
+  transform: scale(0.97);
+  opacity: 1;
 }
 
 .toggle {

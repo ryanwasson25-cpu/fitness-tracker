@@ -66,16 +66,27 @@
   color: var(--danger);
   font-size: 13px;
   padding: 8px 12px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.3);
   border-radius: var(--radius);
 }
 
 .saveBtn {
   background: var(--accent);
-  color: #fff;
+  color: #000;
   font-weight: 700;
   font-size: 15px;
   padding: 12px;
   border-radius: 10px;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.saveBtn:hover {
+  box-shadow: 0 0 28px rgba(0, 212, 170, 0.3);
+  opacity: 1;
+}
+
+.saveBtn:active {
+  transform: scale(0.97);
+  opacity: 1;
 }

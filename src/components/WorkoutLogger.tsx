@@ -3,18 +3,24 @@ import { supabase } from '../lib/supabase'
 import type { WorkoutSetInsert } from '../types/database'
 import styles from './WorkoutLogger.module.css'
 
-interface Props {
-  userId: string
-  onSaved: () => void
-  onCancel: () => void
-}
-
-interface SetDraft {
+export interface SetDraft {
   id: string
   exercise_name: string
   set_number: number
   reps: string
   weight_lbs: string
+}
+
+export interface WorkoutTemplate {
+  name: string
+  initialSets: SetDraft[]
+}
+
+interface Props {
+  userId: string
+  onSaved: () => void
+  onCancel: () => void
+  template?: WorkoutTemplate
 }
 
 function newSet(exerciseName: string, setNumber: number): SetDraft {
@@ -31,11 +37,13 @@ function today() {
   return new Date().toISOString().split('T')[0]
 }
 
-export default function WorkoutLogger({ userId, onSaved, onCancel }: Props) {
-  const [name, setName] = useState('')
+export default function WorkoutLogger({ userId, onSaved, onCancel, template }: Props) {
+  const [name, setName] = useState(template?.name ?? '')
   const [date, setDate] = useState(today())
   const [notes, setNotes] = useState('')
-  const [sets, setSets] = useState<SetDraft[]>([])
+  const [sets, setSets] = useState<SetDraft[]>(
+    template?.initialSets.map(s => ({ ...s, id: crypto.randomUUID() })) ?? []
+  )
   const [currentExercise, setCurrentExercise] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
