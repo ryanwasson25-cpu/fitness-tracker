@@ -47,8 +47,14 @@
 
 .summaryGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
+}
+
+@media (max-width: 420px) {
+  .summaryGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .summaryItem {
@@ -67,6 +73,29 @@
 .summaryLabel {
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.streakValue {
+  color: var(--accent);
+}
+
+.wellnessRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.wellnessChip {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
 }
 
 /* Section */

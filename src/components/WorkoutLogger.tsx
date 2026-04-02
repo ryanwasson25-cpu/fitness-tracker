@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import type { WorkoutSetInsert } from '../types/database'
 import styles from './WorkoutLogger.module.css'
@@ -16,11 +16,20 @@ export interface WorkoutTemplate {
   initialSets: SetDraft[]
 }
 
+export interface EditWorkoutData {
+  workoutId: string
+  name: string
+  date: string
+  notes: string
+  sets: SetDraft[]
+}
+
 interface Props {
   userId: string
   onSaved: () => void
   onCancel: () => void
   template?: WorkoutTemplate
+  editWorkout?: EditWorkoutData
 }
 
 function newSet(exerciseName: string, setNumber: number): SetDraft {
@@ -37,22 +46,116 @@ function today() {
   return new Date().toISOString().split('T')[0]
 }
 
-export default function WorkoutLogger({ userId, onSaved, onCancel, template }: Props) {
-  const [name, setName] = useState(template?.name ?? '')
-  const [date, setDate] = useState(today())
-  const [notes, setNotes] = useState('')
+export default function WorkoutLogger({ userId, onSaved, onCancel, template, editWorkout }: Props) {
+  const isEditMode = !!editWorkout
+
+  const [name, setName] = useState(editWorkout?.name ?? template?.name ?? '')
+  const [date, setDate] = useState(editWorkout?.date ?? today())
+  const [notes, setNotes] = useState(editWorkout?.notes ?? '')
   const [sets, setSets] = useState<SetDraft[]>(
-    template?.initialSets.map(s => ({ ...s, id: crypto.randomUUID() })) ?? []
+    editWorkout?.sets.map(s => ({ ...s, id: crypto.randomUUID() })) ??
+    template?.initialSets.map(s => ({ ...s, id: crypto.randomUUID() })) ??
+    []
   )
   const [currentExercise, setCurrentExercise] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Autocomplete state
+  const [allExerciseNames, setAllExerciseNames] = useState<string[]>([])
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+
+  // Progressive overload suggestions (keyed by exercise name)
+  interface OverloadHint {
+    lastMax: number
+    suggested: number
+  }
+  const [overloadHints, setOverloadHints] = useState<Record<string, OverloadHint>>({})
+
+  useEffect(() => {
+    supabase
+      .from('exercises')
+      .select('name')
+      .eq('user_id', userId)
+      .order('name')
+      .then(({ data }) => {
+        setAllExerciseNames((data ?? []).map((e: { name: string }) => e.name))
+      })
+  }, [userId])
+
+  // Load progressive overload hints when using a template (repeat previous workout)
+  useEffect(() => {
+    if (!template || template.initialSets.length === 0) return
+
+    const exerciseNames = [...new Set(template.initialSets.map(s => s.exercise_name))]
+
+    async function loadHints() {
+      const results: Record<string, OverloadHint> = {}
+
+      await Promise.all(exerciseNames.map(async (exerciseName) => {
+        const { data } = await supabase
+          .from('sets')
+          .select('weight_lbs, workouts!inner(date)')
+          .ilike('exercise_name', exerciseName)
+          .not('weight_lbs', 'is', null)
+
+        if (!data || data.length === 0) return
+
+        // Group by workout date, find max weight per session
+        const byDate: Record<string, number> = {}
+        for (const row of data as unknown as { weight_lbs: number; workouts: { date: string } }[]) {
+          const date = row.workouts?.date
+          if (!date) continue
+          if (!byDate[date] || row.weight_lbs > byDate[date]) {
+            byDate[date] = row.weight_lbs
+          }
+        }
+
+        const sortedDates = Object.keys(byDate).sort().reverse()
+        if (sortedDates.length < 2) return // Need at least 2 sessions to suggest
+
+        const lastMax = byDate[sortedDates[0]]
+        const prevMax = byDate[sortedDates[1]]
+
+        // Only suggest if they held or improved their previous weight (ready to progress)
+        if (lastMax >= prevMax) {
+          const increment = lastMax >= 100 ? 5 : 2.5
+          results[exerciseName] = { lastMax, suggested: lastMax + increment }
+        }
+      }))
+
+      setOverloadHints(results)
+    }
+
+    loadHints()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [template?.name])
+
+  function handleExerciseInputChange(value: string) {
+    setCurrentExercise(value)
+    if (value.trim().length > 0) {
+      const filtered = allExerciseNames.filter(s =>
+        s.toLowerCase().includes(value.toLowerCase())
+      )
+      setFilteredSuggestions(filtered.slice(0, 6))
+      setShowSuggestions(filtered.length > 0)
+    } else {
+      setShowSuggestions(false)
+    }
+  }
+
+  function selectSuggestion(name: string) {
+    setCurrentExercise(name)
+    setShowSuggestions(false)
+  }
 
   function addExercise() {
     const trimmed = currentExercise.trim()
     if (!trimmed) return
     setSets(prev => [...prev, newSet(trimmed, 1)])
     setCurrentExercise('')
+    setShowSuggestions(false)
   }
 
   function addSet(exerciseName: string) {
@@ -94,37 +197,10 @@ export default function WorkoutLogger({ userId, onSaved, onCancel, template }: P
     return order.map(name => [name, groups[name]])
   }
 
-  async function handleSave() {
-    if (!name.trim()) {
-      setError('Workout name is required.')
-      return
-    }
-    if (sets.length === 0) {
-      setError('Add at least one exercise set.')
-      return
-    }
-
-    setError(null)
-    setSaving(true)
-
-    // 1. Create workout
-    const { data: workout, error: workoutError } = await supabase
-      .from('workouts')
-      .insert({ user_id: userId, name: name.trim(), date, notes: notes.trim() || null })
-      .select()
-      .single()
-
-    if (workoutError || !workout) {
-      setError(workoutError?.message ?? 'Failed to save workout.')
-      setSaving(false)
-      return
-    }
-
-    // 2. Upsert exercises and save sets
+  async function saveSets(workoutId: string) {
     const setsToInsert: WorkoutSetInsert[] = []
 
     for (const set of sets) {
-      // Find or create exercise
       let exerciseId: string
 
       const { data: existing } = await supabase
@@ -146,13 +222,13 @@ export default function WorkoutLogger({ userId, onSaved, onCancel, template }: P
         if (exErr || !created) {
           setError(exErr?.message ?? 'Failed to create exercise.')
           setSaving(false)
-          return
+          return false
         }
         exerciseId = created.id
       }
 
       setsToInsert.push({
-        workout_id: workout.id,
+        workout_id: workoutId,
         exercise_id: exerciseId,
         exercise_name: set.exercise_name,
         set_number: set.set_number,
@@ -162,12 +238,65 @@ export default function WorkoutLogger({ userId, onSaved, onCancel, template }: P
     }
 
     const { error: setsError } = await supabase.from('sets').insert(setsToInsert)
-
     if (setsError) {
       setError(setsError.message)
       setSaving(false)
+      return false
+    }
+    return true
+  }
+
+  async function handleSave() {
+    if (!name.trim()) {
+      setError('Workout name is required.')
       return
     }
+    if (sets.length === 0) {
+      setError('Add at least one exercise set.')
+      return
+    }
+
+    setError(null)
+    setSaving(true)
+
+    if (isEditMode && editWorkout) {
+      // Edit mode: UPDATE workout record and replace sets
+      const { error: updateError } = await supabase
+        .from('workouts')
+        .update({ name: name.trim(), date, notes: notes.trim() || null })
+        .eq('id', editWorkout.workoutId)
+
+      if (updateError) {
+        setError(updateError.message)
+        setSaving(false)
+        return
+      }
+
+      // Delete existing sets and re-insert
+      await supabase.from('sets').delete().eq('workout_id', editWorkout.workoutId)
+
+      const ok = await saveSets(editWorkout.workoutId)
+      if (!ok) return
+
+      onSaved()
+      return
+    }
+
+    // Create mode: INSERT new workout
+    const { data: workout, error: workoutError } = await supabase
+      .from('workouts')
+      .insert({ user_id: userId, name: name.trim(), date, notes: notes.trim() || null })
+      .select()
+      .single()
+
+    if (workoutError || !workout) {
+      setError(workoutError?.message ?? 'Failed to save workout.')
+      setSaving(false)
+      return
+    }
+
+    const ok = await saveSets(workout.id)
+    if (!ok) return
 
     onSaved()
   }
@@ -177,7 +306,7 @@ export default function WorkoutLogger({ userId, onSaved, onCancel, template }: P
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2 className={styles.heading}>Log Workout</h2>
+        <h2 className={styles.heading}>{isEditMode ? 'Edit Workout' : 'Log Workout'}</h2>
         <button className={styles.cancelBtn} onClick={onCancel}>Cancel</button>
       </div>
 
@@ -220,13 +349,38 @@ export default function WorkoutLogger({ userId, onSaved, onCancel, template }: P
         <h3 className={styles.sectionTitle}>Exercises</h3>
 
         <div className={styles.addExercise}>
-          <input
-            type="text"
-            value={currentExercise}
-            onChange={e => setCurrentExercise(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addExercise()}
-            placeholder="Exercise name (e.g. Bench Press)"
-          />
+          <div className={styles.exerciseInputWrap}>
+            <input
+              type="text"
+              value={currentExercise}
+              onChange={e => handleExerciseInputChange(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') addExercise()
+                if (e.key === 'Escape') setShowSuggestions(false)
+              }}
+              onFocus={() => {
+                if (currentExercise.trim() && filteredSuggestions.length > 0) {
+                  setShowSuggestions(true)
+                }
+              }}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+              placeholder="Exercise name (e.g. Bench Press)"
+              autoComplete="off"
+            />
+            {showSuggestions && (
+              <div className={styles.suggestions}>
+                {filteredSuggestions.map(suggestion => (
+                  <button
+                    key={suggestion}
+                    className={styles.suggestion}
+                    onMouseDown={() => selectSuggestion(suggestion)}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <button className={styles.addBtn} onClick={addExercise}>Add</button>
         </div>
 
@@ -245,6 +399,18 @@ export default function WorkoutLogger({ userId, onSaved, onCancel, template }: P
                 Remove
               </button>
             </div>
+
+            {template && overloadHints[exerciseName] && (
+              <div className={styles.overloadHint}>
+                <span className={styles.overloadIcon}>💡</span>
+                <span className={styles.overloadText}>
+                  Last session: <strong>{overloadHints[exerciseName].lastMax} lbs</strong>
+                  {' '}→ Try{' '}
+                  <strong className={styles.overloadTarget}>{overloadHints[exerciseName].suggested} lbs</strong>
+                  {' '}today
+                </span>
+              </div>
+            )}
 
             <table className={styles.setsTable}>
               <thead>
@@ -310,7 +476,7 @@ export default function WorkoutLogger({ userId, onSaved, onCancel, template }: P
         onClick={handleSave}
         disabled={saving}
       >
-        {saving ? 'Saving…' : 'Save Workout'}
+        {saving ? 'Saving…' : isEditMode ? 'Update Workout' : 'Save Workout'}
       </button>
     </div>
   )

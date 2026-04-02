@@ -40,10 +40,76 @@
   margin-bottom: -4px;
 }
 
+.row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 12px;
+}
+
+/* Sleep quality slider */
+.sleepLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.sleepLabelScore {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.sleepSliderWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sleepSliderMin,
+.sleepSliderMax {
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+
+.sleepSlider {
+  flex: 1;
+  height: 6px;
+  cursor: pointer;
+  accent-color: var(--accent);
+  background: transparent;
+}
+
+.sleepClearBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.sleepClearBtn:hover {
+  color: var(--danger);
+  opacity: 1;
+}
+
+.sleepHint {
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.6;
+  margin-top: -4px;
 }
 
 .field {

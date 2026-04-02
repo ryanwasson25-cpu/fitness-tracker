@@ -46,6 +46,32 @@
   gap: 12px;
 }
 
+.cardActions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.editBtn {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.editBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  opacity: 1;
+}
+
 .cardInfo {
   display: flex;
   flex-direction: column;
@@ -62,6 +88,24 @@
 .cardStats {
   font-size: 13px;
   color: var(--accent);
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.chip {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  background: rgba(0, 212, 170, 0.08);
+  border: 1px solid rgba(0, 212, 170, 0.2);
+  border-radius: 20px;
+  padding: 2px 8px;
+  white-space: nowrap;
 }
 
 .notes {

@@ -4,11 +4,82 @@
   gap: 16px;
 }
 
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .heading {
   font-size: 20px;
   font-weight: 700;
   color: var(--text);
+}
+
+.rangeButtons {
+  display: flex;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.rangeBtn {
+  background: none;
+  color: var(--text-muted);
+  border: none;
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.rangeBtn:hover {
+  color: var(--text);
+  opacity: 1;
+}
+
+.rangeBtnActive {
+  background: var(--accent);
+  color: #000 !important;
+  font-weight: 700;
+}
+
+.rangeBtnActive:hover {
+  opacity: 0.9;
+}
+
+.prBanner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
   margin-bottom: 4px;
+}
+
+.prLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffd700;
+}
+
+.prValue {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffd700;
+}
+
+.prDate {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
 }
 
 .card {

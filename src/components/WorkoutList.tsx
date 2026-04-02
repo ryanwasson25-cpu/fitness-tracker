@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import type { Workout, WorkoutSet } from '../types/database'
+import type { EditWorkoutData, SetDraft } from './WorkoutLogger'
 import styles from './WorkoutList.module.css'
 
 interface Props {
   userId: string
   onStartLog: () => void
+  onEdit: (data: EditWorkoutData) => void
 }
 
 interface WorkoutWithSets extends Workout {
@@ -13,10 +15,11 @@ interface WorkoutWithSets extends Workout {
   expanded: boolean
 }
 
-export default function WorkoutList({ userId, onStartLog }: Props) {
+export default function WorkoutList({ userId, onStartLog, onEdit }: Props) {
   const [workouts, setWorkouts] = useState<WorkoutWithSets[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [editLoadingId, setEditLoadingId] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -39,6 +42,15 @@ export default function WorkoutList({ userId, onStartLog }: Props) {
     load()
   }, [userId])
 
+  async function loadSets(id: string): Promise<WorkoutSet[]> {
+    const { data } = await supabase
+      .from('sets')
+      .select('*')
+      .eq('workout_id', id)
+      .order('set_number', { ascending: true })
+    return data ?? []
+  }
+
   async function toggleWorkout(id: string) {
     setWorkouts(prev => prev.map(w => {
       if (w.id !== id) return w
@@ -48,17 +60,36 @@ export default function WorkoutList({ userId, onStartLog }: Props) {
     const workout = workouts.find(w => w.id === id)
     if (!workout || workout.sets.length > 0) return
 
-    const { data } = await supabase
-      .from('sets')
-      .select('*')
-      .eq('workout_id', id)
-      .order('set_number', { ascending: true })
+    const sets = await loadSets(id)
+    setWorkouts(prev => prev.map(w =>
+      w.id === id ? { ...w, sets } : w
+    ))
+  }
 
-    if (data) {
-      setWorkouts(prev => prev.map(w =>
-        w.id === id ? { ...w, sets: data } : w
-      ))
+  async function handleEdit(workout: WorkoutWithSets) {
+    setEditLoadingId(workout.id)
+    let sets = workout.sets
+    if (sets.length === 0) {
+      sets = await loadSets(workout.id)
+      setWorkouts(prev => prev.map(w => w.id === workout.id ? { ...w, sets } : w))
     }
+
+    const setDrafts: SetDraft[] = sets.map(s => ({
+      id: crypto.randomUUID(),
+      exercise_name: s.exercise_name,
+      set_number: s.set_number,
+      reps: s.reps?.toString() ?? '',
+      weight_lbs: s.weight_lbs?.toString() ?? '',
+    }))
+
+    onEdit({
+      workoutId: workout.id,
+      name: workout.name,
+      date: workout.date,
+      notes: workout.notes ?? '',
+      sets: setDrafts,
+    })
+    setEditLoadingId(null)
   }
 
   async function deleteWorkout(id: string) {
@@ -104,7 +135,7 @@ export default function WorkoutList({ userId, onStartLog }: Props) {
       </div>
 
       {workouts.map(workout => (
-        <div key={workout.id} className={styles.card}>
+        <div key={workout.id} className={`${styles.card} ${workout.expanded ? styles.cardExpanded : ''}`}>
           <button className={styles.cardHeader} onClick={() => toggleWorkout(workout.id)}>
             <div className={styles.cardInfo}>
               <span className={styles.cardName}>{workout.name}</span>
@@ -149,9 +180,18 @@ export default function WorkoutList({ userId, onStartLog }: Props) {
                 ))
               )}
 
-              <button className={styles.deleteBtn} onClick={() => deleteWorkout(workout.id)}>
-                Delete workout
-              </button>
+              <div className={styles.cardActions}>
+                <button
+                  className={styles.editBtn}
+                  onClick={() => handleEdit(workout)}
+                  disabled={editLoadingId === workout.id}
+                >
+                  {editLoadingId === workout.id ? 'Loading…' : 'Edit'}
+                </button>
+                <button className={styles.deleteBtn} onClick={() => deleteWorkout(workout.id)}>
+                  Delete
+                </button>
+              </div>
             </div>
           )}
         </div>

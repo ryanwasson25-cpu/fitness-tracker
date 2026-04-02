@@ -111,6 +111,8 @@ export interface BodyMetric {
   date: string
   weight_lbs: number | null
   body_fat_pct: number | null
+  sleep_score: number | null
+  steps: number | null
   notes: string | null
   created_at: string
 }
@@ -120,5 +122,7 @@ export interface BodyMetricInsert {
   date: string
   weight_lbs?: number | null
   body_fat_pct?: number | null
+  sleep_score?: number | null
+  steps?: number | null
   notes?: string | null
 }

@@ -10,10 +10,14 @@ interface Props {
   onNavigate: (view: View) => void
 }
 
-interface WeekSummary {
+interface HomeData {
   workoutCount: number
+  totalWorkouts: number
+  streakDays: number
   latestWeight: number | null
   latestBodyFat: number | null
+  latestSleepScore: number | null
+  latestSteps: number | null
 }
 
 interface RecentWorkout {
@@ -84,11 +88,43 @@ function getWeekBounds() {
   }
 }
 
+function calculateStreak(dates: Set<string>): number {
+  if (dates.size === 0) return 0
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const todayStr = today.toISOString().slice(0, 10)
+
+  // Start counting from today; if no workout today, start from yesterday
+  const startDate = new Date(today)
+  if (!dates.has(todayStr)) {
+    startDate.setDate(startDate.getDate() - 1)
+  }
+
+  let streak = 0
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(startDate)
+    d.setDate(startDate.getDate() - i)
+    const dateStr = d.toISOString().slice(0, 10)
+    if (dates.has(dateStr)) {
+      streak++
+    } else {
+      break
+    }
+  }
+  return streak
+}
+
+
 export default function HomeScreen({ userId, email, onNavigate }: Props) {
-  const [summary, setSummary] = useState<WeekSummary>({
+  const [data, setData] = useState<HomeData>({
     workoutCount: 0,
+    totalWorkouts: 0,
+    streakDays: 0,
     latestWeight: null,
     latestBodyFat: null,
+    latestSleepScore: null,
+    latestSteps: null,
   })
   const [recentWorkouts, setRecentWorkouts] = useState<RecentWorkout[]>([])
   const [loading, setLoading] = useState(true)
@@ -102,7 +138,7 @@ export default function HomeScreen({ userId, email, onNavigate }: Props) {
     async function load() {
       const { start, end } = getWeekBounds()
 
-      const [workoutsThisWeekRes, recentWorkoutsRes, latestMetricRes] = await Promise.all([
+      const [workoutsThisWeekRes, recentWorkoutsRes, latestMetricRes, allDatesRes] = await Promise.all([
         supabase
           .from('workouts')
           .select('id', { count: 'exact', head: true })
@@ -117,18 +153,30 @@ export default function HomeScreen({ userId, email, onNavigate }: Props) {
           .limit(3),
         supabase
           .from('body_metrics')
-          .select('weight_lbs, body_fat_pct')
+          .select('weight_lbs, body_fat_pct, sleep_score, steps')
           .eq('user_id', userId)
           .order('date', { ascending: false })
           .order('created_at', { ascending: false })
           .limit(1)
           .single(),
+        supabase
+          .from('workouts')
+          .select('date')
+          .eq('user_id', userId),
       ])
 
-      setSummary({
+      const allDates = new Set((allDatesRes.data ?? []).map((w: { date: string }) => w.date))
+      const streak = calculateStreak(allDates)
+      const totalWorkouts = allDatesRes.data?.length ?? 0
+
+      setData({
         workoutCount: workoutsThisWeekRes.count ?? 0,
+        totalWorkouts,
+        streakDays: streak,
         latestWeight: latestMetricRes.data?.weight_lbs ?? null,
         latestBodyFat: latestMetricRes.data?.body_fat_pct ?? null,
+        latestSleepScore: latestMetricRes.data?.sleep_score ?? null,
+        latestSteps: latestMetricRes.data?.steps ?? null,
       })
 
       setRecentWorkouts((recentWorkoutsRes.data ?? []) as RecentWorkout[])
@@ -152,27 +200,52 @@ export default function HomeScreen({ userId, email, onNavigate }: Props) {
         </p>
       </div>
 
-      {/* This Week summary */}
+      {/* Stats summary */}
       <div className={styles.summaryCard}>
-        <p className={styles.summaryTitle}>This Week</p>
+        <p className={styles.summaryTitle}>Overview</p>
         <div className={styles.summaryGrid}>
           <div className={styles.summaryItem}>
-            <span className={styles.summaryValue}>{summary.workoutCount}</span>
-            <span className={styles.summaryLabel}>Workouts</span>
+            <span className={styles.summaryValue}>{data.workoutCount}</span>
+            <span className={styles.summaryLabel}>This week</span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={`${styles.summaryValue} ${data.streakDays > 0 ? styles.streakValue : ''}`}>
+              {data.streakDays > 0 ? `🔥 ${data.streakDays}` : '—'}
+            </span>
+            <span className={styles.summaryLabel}>Day streak</span>
+          </div>
+          <div className={styles.summaryItem}>
+            <span className={styles.summaryValue}>{data.totalWorkouts}</span>
+            <span className={styles.summaryLabel}>Total workouts</span>
           </div>
           <div className={styles.summaryItem}>
             <span className={styles.summaryValue}>
-              {summary.latestWeight != null ? `${summary.latestWeight}` : '—'}
+              {data.latestWeight != null ? `${data.latestWeight}` : '—'}
             </span>
             <span className={styles.summaryLabel}>lbs</span>
           </div>
           <div className={styles.summaryItem}>
             <span className={styles.summaryValue}>
-              {summary.latestBodyFat != null ? `${summary.latestBodyFat}%` : '—'}
+              {data.latestBodyFat != null ? `${data.latestBodyFat}%` : '—'}
             </span>
-            <span className={styles.summaryLabel}>Body Fat</span>
+            <span className={styles.summaryLabel}>Body fat</span>
           </div>
         </div>
+
+        {(data.latestSleepScore != null || data.latestSteps != null) && (
+          <div className={styles.wellnessRow}>
+            {data.latestSleepScore != null && (
+              <span className={styles.wellnessChip}>
+                💤 Sleep {data.latestSleepScore}/100
+              </span>
+            )}
+            {data.latestSteps != null && (
+              <span className={styles.wellnessChip}>
+                👟 {data.latestSteps.toLocaleString()} steps
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Recent Activity */}

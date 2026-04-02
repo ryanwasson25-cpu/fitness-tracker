@@ -6,6 +6,7 @@ import styles from './MetricsList.module.css'
 interface Props {
   userId: string
   onStartLog: () => void
+  onEdit: (entry: BodyMetric) => void
 }
 
 function formatDate(d: string) {
@@ -16,7 +17,23 @@ function formatDate(d: string) {
   })
 }
 
-export default function MetricsList({ userId, onStartLog }: Props) {
+function sleepEmoji(score: number): string {
+  if (score <= 20) return '😴'
+  if (score <= 40) return '😪'
+  if (score <= 60) return '😐'
+  if (score <= 80) return '😊'
+  return '🌟'
+}
+
+function sleepColor(score: number): string {
+  if (score <= 20) return '#ff6b6b'
+  if (score <= 40) return '#e07b39'
+  if (score <= 60) return '#f5c842'
+  if (score <= 80) return '#00d4aa'
+  return '#00ff99'
+}
+
+export default function MetricsList({ userId, onStartLog, onEdit }: Props) {
   const [entries, setEntries] = useState<BodyMetric[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -63,7 +80,7 @@ export default function MetricsList({ userId, onStartLog }: Props) {
     return (
       <div className={styles.emptyState}>
         <p className={styles.emptyTitle}>No stats logged yet</p>
-        <p className={styles.emptyText}>Track your weight and body fat over time.</p>
+        <p className={styles.emptyText}>Track your weight, sleep, and steps over time.</p>
         <button className={styles.startBtn} onClick={onStartLog}>+ Log Stats</button>
       </div>
     )
@@ -77,25 +94,52 @@ export default function MetricsList({ userId, onStartLog }: Props) {
       </div>
 
       {entries.map(entry => {
-        const weightStr = entry.weight_lbs != null ? `${entry.weight_lbs} lbs` : null
-        const bfStr = entry.body_fat_pct != null ? `${entry.body_fat_pct}% BF` : null
-        const statLine = [weightStr, bfStr].filter(Boolean).join(' · ') || 'No data'
+        const chips: { label: string; color?: string }[] = []
+        if (entry.weight_lbs != null) chips.push({ label: `${entry.weight_lbs} lbs` })
+        if (entry.body_fat_pct != null) chips.push({ label: `${entry.body_fat_pct}% BF`, color: '#e07b39' })
+        if (entry.sleep_score != null) chips.push({
+          label: `${sleepEmoji(entry.sleep_score)} ${entry.sleep_score}/100 sleep`,
+          color: sleepColor(entry.sleep_score),
+        })
+        if (entry.steps != null) chips.push({ label: `👟 ${entry.steps.toLocaleString()} steps` })
 
         return (
           <div key={entry.id} className={styles.card}>
             <div className={styles.cardContent}>
               <div className={styles.cardInfo}>
                 <span className={styles.cardDate}>{formatDate(entry.date)}</span>
-                <span className={styles.cardStats}>{statLine}</span>
+                {chips.length > 0 ? (
+                  <div className={styles.chipRow}>
+                    {chips.map((chip, i) => (
+                      <span
+                        key={i}
+                        className={styles.chip}
+                        style={chip.color ? { color: chip.color } : undefined}
+                      >
+                        {chip.label}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className={styles.cardStats}>No data</span>
+                )}
                 {entry.notes && <p className={styles.notes}>{entry.notes}</p>}
               </div>
-              <button
-                className={styles.deleteBtn}
-                onClick={() => handleDelete(entry.id)}
-                disabled={deleting === entry.id}
-              >
-                {deleting === entry.id ? '…' : 'Delete'}
-              </button>
+              <div className={styles.cardActions}>
+                <button
+                  className={styles.editBtn}
+                  onClick={() => onEdit(entry)}
+                >
+                  Edit
+                </button>
+                <button
+                  className={styles.deleteBtn}
+                  onClick={() => handleDelete(entry.id)}
+                  disabled={deleting === entry.id}
+                >
+                  {deleting === entry.id ? '…' : 'Delete'}
+                </button>
+              </div>
             </div>
           </div>
         )

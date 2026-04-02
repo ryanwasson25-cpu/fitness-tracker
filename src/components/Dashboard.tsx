@@ -2,11 +2,12 @@ import { useState, useEffect, type ReactElement } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import WorkoutList from './WorkoutList'
-import WorkoutLogger, { type SetDraft, type WorkoutTemplate } from './WorkoutLogger'
+import WorkoutLogger, { type SetDraft, type WorkoutTemplate, type EditWorkoutData } from './WorkoutLogger'
 import MetricsList from './MetricsList'
 import MetricsLogger from './MetricsLogger'
 import ProgressCharts from './ProgressCharts'
 import HomeScreen from './HomeScreen'
+import type { BodyMetric } from '../types/database'
 import { HomeIcon, PlusCircleIcon, ClockIcon, TrendingUpIcon, DumbbellIcon, ActivityIcon, PlusSquareIcon, RepeatIcon } from './Icons'
 import styles from './Dashboard.module.css'
 
@@ -14,7 +15,17 @@ interface Props {
   session: Session
 }
 
-export type View = 'home' | 'log' | 'log-workout-mode' | 'log-workout' | 'log-stats' | 'repeat-workout' | 'history' | 'progress'
+export type View =
+  | 'home'
+  | 'log'
+  | 'log-workout-mode'
+  | 'log-workout'
+  | 'log-stats'
+  | 'repeat-workout'
+  | 'history'
+  | 'progress'
+  | 'edit-workout'
+  | 'edit-stats'
 
 const TABS: { id: View; icon: ReactElement; label: string }[] = [
   { id: 'home', icon: <HomeIcon />, label: 'Home' },
@@ -200,11 +211,15 @@ function HistoryView({
   workoutRefreshKey,
   metricsRefreshKey,
   onStartLog,
+  onEditWorkout,
+  onEditMetric,
 }: {
   userId: string
   workoutRefreshKey: number
   metricsRefreshKey: number
   onStartLog: () => void
+  onEditWorkout: (data: EditWorkoutData) => void
+  onEditMetric: (entry: BodyMetric) => void
 }) {
   const [tab, setTab] = useState<HistoryTab>('workouts')
 
@@ -230,6 +245,7 @@ function HistoryView({
           userId={userId}
           key={workoutRefreshKey}
           onStartLog={onStartLog}
+          onEdit={onEditWorkout}
         />
       )}
       {tab === 'stats' && (
@@ -237,6 +253,7 @@ function HistoryView({
           userId={userId}
           key={metricsRefreshKey}
           onStartLog={onStartLog}
+          onEdit={onEditMetric}
         />
       )}
     </div>
@@ -248,14 +265,18 @@ export default function Dashboard({ session }: Props) {
   const [workoutRefreshKey, setWorkoutRefreshKey] = useState(0)
   const [metricsRefreshKey, setMetricsRefreshKey] = useState(0)
   const [workoutTemplate, setWorkoutTemplate] = useState<WorkoutTemplate | null>(null)
+  const [editingWorkout, setEditingWorkout] = useState<EditWorkoutData | null>(null)
+  const [editingMetric, setEditingMetric] = useState<BodyMetric | null>(null)
 
   function handleWorkoutSaved() {
     setWorkoutTemplate(null)
+    setEditingWorkout(null)
     setWorkoutRefreshKey(k => k + 1)
     setView('history')
   }
 
   function handleMetricsSaved() {
+    setEditingMetric(null)
     setMetricsRefreshKey(k => k + 1)
     setView('history')
   }
@@ -265,9 +286,21 @@ export default function Dashboard({ session }: Props) {
     setView('log-workout')
   }
 
+  function handleEditWorkout(data: EditWorkoutData) {
+    setEditingWorkout(data)
+    setView('edit-workout')
+  }
+
+  function handleEditMetric(entry: BodyMetric) {
+    setEditingMetric(entry)
+    setView('edit-stats')
+  }
+
   const activeTab: View =
     view === 'log-workout' || view === 'log-stats' || view === 'log-workout-mode' || view === 'repeat-workout'
       ? 'log'
+      : view === 'edit-workout' || view === 'edit-stats'
+      ? 'history'
       : view
 
   return (
@@ -305,6 +338,14 @@ export default function Dashboard({ session }: Props) {
               template={workoutTemplate ?? undefined}
             />
           )}
+          {view === 'edit-workout' && editingWorkout && (
+            <WorkoutLogger
+              userId={session.user.id}
+              onSaved={handleWorkoutSaved}
+              onCancel={() => { setEditingWorkout(null); setView('history') }}
+              editWorkout={editingWorkout}
+            />
+          )}
           {view === 'repeat-workout' && (
             <RepeatWorkoutPicker
               userId={session.user.id}
@@ -319,12 +360,22 @@ export default function Dashboard({ session }: Props) {
               onCancel={() => setView('log')}
             />
           )}
+          {view === 'edit-stats' && editingMetric && (
+            <MetricsLogger
+              userId={session.user.id}
+              onSaved={handleMetricsSaved}
+              onCancel={() => { setEditingMetric(null); setView('history') }}
+              editMetric={editingMetric}
+            />
+          )}
           {view === 'history' && (
             <HistoryView
               userId={session.user.id}
               workoutRefreshKey={workoutRefreshKey}
               metricsRefreshKey={metricsRefreshKey}
               onStartLog={() => setView('log')}
+              onEditWorkout={handleEditWorkout}
+              onEditMetric={handleEditMetric}
             />
           )}
           {view === 'progress' && (
